@@ -1,0 +1,75 @@
+version: '3'
+services: 
+  # web:
+  #   build: './web'
+  #   ports:
+  #     - "3000:3000"
+  
+  home-service:
+    build: 
+      context: './home-service'
+      dockerfile: Dockerfile
+      target: base
+    volumes:
+      - ./home-service:/usr/src/app
+    ports:
+      - "3002"
+    restart: always
+    depends_on:
+      - rabbitmq3
+    environment:
+      - RABBITMQ_DEFAULT_USER=home-service
+      - RABBITMQ_DEFAULT_PASS=rmqhomeservice
+      - NODE_ENV=dev
+      - PORT=3000
+
+  registry-service:
+    build: 
+      context: './registry-service'
+      dockerfile: Dockerfile
+      target: base
+    volumes:
+      - ./registry-service:/usr/src/app
+    ports:
+      - "3001:3000"
+    container_name: registry-service
+    restart: always
+    depends_on:
+      - rabbitmq3
+      - mongo
+    environment:
+      - NODE_ENV=dev
+
+  mongo:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes: 
+      - "./mongo/db:/data/db"
+    logging:
+      driver: "none"
+
+  rabbitmq3:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+    # AMQP protocol port
+    - '5672:5672'
+    # HTTP management UI
+    - '15672:15672'
+    environment:
+      - RABBITMQ_DEFAULT_USER=myuser
+      - RABBITMQ_DEFAULT_PASS=mypassword
+    
+  nginx:
+    restart: always
+    image: nginx:latest
+    container_name: nginx
+    volumes:
+        - "./nginx/default.conf:/etc/nginx/conf.d/default.conf"
+    ports:
+        - "8080:80"
+    depends_on:
+      - home-service
+      - registry-service
