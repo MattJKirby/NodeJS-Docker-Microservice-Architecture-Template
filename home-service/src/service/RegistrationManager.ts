@@ -32,50 +32,50 @@ export class RegistrationManager {
     
     resolve!: (value: void | PromiseLike<void>) => void;
 
-      constructor(registrationConfig: IRegistrationConfig){
-          this.config = registrationConfig;
-          this.registrationPublisher = new MessagePublisher(MessageBroker);
-          this.registrationConsumer = new MessageConsumer(MessageBroker, this.config.genericResponseQueue);
+    constructor(registrationConfig: IRegistrationConfig){
+        this.config = registrationConfig;
+        this.registrationPublisher = new MessagePublisher(MessageBroker);
+        this.registrationConsumer = new MessageConsumer(MessageBroker, this.config.genericResponseQueue);
 
-          this.registrationConsumer.subscribe()
-          this.bindMessageHandlers();
-        }
+        this.registrationConsumer.subscribe()
+        this.bindMessageHandlers();
+    }
 
-        public registerService = async (registrationMetaData: IServiceMetaData, currentStatus: ServiceStatus) => {
-            const registrationInterval = setInterval(async () => {
-                this.registrationPromise = new Promise((resolve, reject) => {
-                    this.resolve = resolve
-                });
-                if(this.uid === undefined){
-                    this.makeRegistrationRequest(registrationMetaData, currentStatus);
-                } else {
-                    clearInterval(registrationInterval)
-                }  
-            }, 5000); 
-        }
+    public registerService = async (registrationMetaData: IServiceMetaData, currentStatus: ServiceStatus) => {
+        const registrationInterval = setInterval(async () => {
+            this.registrationPromise = new Promise((resolve, reject) => {
+                this.resolve = resolve
+            });
+            if(this.uid === undefined){
+                this.makeRegistrationRequest(registrationMetaData, currentStatus);
+            } else {
+                clearInterval(registrationInterval)
+            }  
+        }, 5000); 
+    }
 
-        public makeRegistrationRequest = async (registrationParams: IServiceMetaData, status: ServiceStatus): Promise<void> =>{
-            console.log("made registration request")
-            this.registrationPublisher.sendMessage(this.config.messageRequestQueue, new BrokerMessage("register", registrationParams));
-            return this.registrationPromise
-        }
-    
-        private bindMessageHandlers = (): void => {
-            this.registrationConsumer.registerMessageHandler("assignToken", (msg: IBrokerMessage) => this.handleRegistration(msg))
-        }
+    public makeRegistrationRequest = async (registrationParams: IServiceMetaData, status: ServiceStatus): Promise<void> =>{
+        console.log("made registration request")
+        this.registrationPublisher.sendMessage(this.config.messageRequestQueue, new BrokerMessage("register", registrationParams));
+        return this.registrationPromise
+    }
 
-        private handleRegistration = (msg: IBrokerMessage): void => {
-            this.uid = msg.messageContent.registrationToken;
-            this.registrationConsumer.unsubscribe();
-            this.resolve();
-        }
+    private bindMessageHandlers = (): void => {
+        this.registrationConsumer.registerMessageHandler("assignToken", (msg: IBrokerMessage) => this.handleRegistration(msg))
+    }
 
-        public registrationHealthCheck = (status: ServiceStatus) => {
-            console.log(this.uid)
-            if(false){
-                status = ServiceStatus.ERROR
-            }
-            this.registrationPublisher.sendMessage(this.config.messageRequestQueue,new BrokerMessage("healthCheck", {uid: this.uid, status: status}));
+    private handleRegistration = (msg: IBrokerMessage): void => {
+        this.uid = msg.messageContent.registrationToken;
+        this.registrationConsumer.unsubscribe();
+        this.resolve();
+    }
+
+    public registrationHealthCheck = (status: ServiceStatus) => {
+        console.log(this.uid)
+        if(false){
+            status = ServiceStatus.ERROR
         }
+        this.registrationPublisher.sendMessage(this.config.messageRequestQueue,new BrokerMessage("healthCheck", {uid: this.uid, status: status}));
+    }
 
 }
