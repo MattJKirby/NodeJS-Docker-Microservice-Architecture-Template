@@ -1,2 +1,6 @@
 # Global .gitignore
 .DS_Store
+
+# DB
+
+/mongo/db
