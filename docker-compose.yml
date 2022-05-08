@@ -13,7 +13,7 @@ services:
     volumes:
       - ./mfe-host-service:/usr/src/app/
     ports:
-      - "8008"
+      - "8000"
   
   home-service:
     build: 
