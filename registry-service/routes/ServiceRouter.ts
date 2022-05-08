@@ -24,11 +24,8 @@ serviceRouter.get('/:uid', async (req, res) => {
 
   serviceRouter.get('/', async (req, res) => {
     const serviceList = async () => {
-        console.log("Called")
         return ServiceDbRequests.getAllRegisteredServices()
     }
-
-    console.log(await serviceList());
 
     res.json({services: await serviceList()})
   })

@@ -4,6 +4,16 @@ services:
   #   build: './web'
   #   ports:
   #     - "3000:3000"
+
+  mfe-host-service:
+    build:
+      context: './mfe-host-service'
+      dockerfile: Dockerfile
+      target: base
+    volumes:
+      - ./mfe-host-service:/usr/src/app/
+    ports:
+      - "8008"
   
   home-service:
     build: 
