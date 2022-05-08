@@ -50,7 +50,7 @@ class ServiceInstance {
 
     private startRegistrationHealthChecks = () => {
         setInterval(() => {
-            if(this.registrationManager.uid !== null){
+            if(this.registrationManager.uid !== undefined){
                 this.registrationManager.registrationHealthCheck(this.status);
             }
         }, 5000)

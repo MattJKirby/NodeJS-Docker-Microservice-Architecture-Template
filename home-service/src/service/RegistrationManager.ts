@@ -43,10 +43,7 @@ export class RegistrationManager {
 
     public registerService = async (registrationMetaData: IServiceMetaData, currentStatus: ServiceStatus) => {
         const registrationInterval = setInterval(async () => {
-            this.registrationPromise = new Promise((resolve, reject) => {
-                this.resolve = resolve
-            });
-            if(this.uid === undefined){
+            if(this.uid === undefined && this.registrationPromise === undefined){
                 this.makeRegistrationRequest(registrationMetaData, currentStatus);
             } else {
                 clearInterval(registrationInterval)
@@ -55,7 +52,9 @@ export class RegistrationManager {
     }
 
     public makeRegistrationRequest = async (registrationParams: IServiceMetaData, status: ServiceStatus): Promise<void> =>{
-        console.log("made registration request")
+        this.registrationPromise = new Promise((resolve, reject) => {
+            this.resolve = resolve
+        });
         this.registrationPublisher.sendMessage(this.config.messageRequestQueue, new BrokerMessage("register", registrationParams));
         return this.registrationPromise
     }
