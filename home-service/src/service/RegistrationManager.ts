@@ -5,7 +5,7 @@ import { MessagePublisher } from "../messageBroker/MessagePublisher";
 import { IBrokerMessage } from "../messageBroker/IBrokerMessage";
 import { BrokerMessage } from "../messageBroker/BrokerMessage";
 import { ServiceStatus } from "./ServiceStatus";
-import { IServiceMetaData } from "./ServiceMetaData";
+import { IServiceMetaData, ServiceMetaData } from "./ServiceMetaData";
 
 export class RegistrationManager {
     /**
@@ -41,10 +41,10 @@ export class RegistrationManager {
         this.bindMessageHandlers();
     }
 
-    public registerService = async (registrationParams: IServiceMetaData, status: ServiceStatus): Promise<void> =>{
+    public registerService = async (meta: IServiceMetaData, status: ServiceStatus): Promise<void> =>{
         return this.registrationPromise = new Promise((resolve, reject) => {
             this.resolve = resolve
-            this.registrationPublisher.sendMessage(this.config.messageRequestQueue, new BrokerMessage("register", registrationParams));
+            this.registrationRequest("register",status,meta);
         });
     }
 
@@ -58,12 +58,8 @@ export class RegistrationManager {
         this.resolve();
     }
 
-    public registrationHealthCheck = (status: ServiceStatus) => {
-        console.log(this.uid)
-        if(false){
-            status = ServiceStatus.ERROR
-        }
-        this.registrationPublisher.sendMessage(this.config.messageRequestQueue,new BrokerMessage("healthCheck", {uid: this.uid, status: status}));
+    public registrationRequest = async(registrationType: string, status: ServiceStatus, meta: IServiceMetaData) => {
+        this.registrationPublisher.sendMessage(this.config.messageRequestQueue,new BrokerMessage(registrationType, {uid: this.uid, status: status, metaData: meta}));
     }
 
 }

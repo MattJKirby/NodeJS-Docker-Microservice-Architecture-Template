@@ -31,7 +31,7 @@ class RegistrationManager{
      */
     private bindMessageHandlers(): void {
         this.registrationConsumer.registerMessageHandler("register", (msg: IBrokerMessage) => this.handleRegistrationRequest(msg, this.registrationPublisher));
-        this.registrationConsumer.registerMessageHandler("healthCheck", (msg: IBrokerMessage) => this.handleHealthCheck(msg, this.registrationPublisher));
+        this.registrationConsumer.registerMessageHandler("healthCheck", (msg: IBrokerMessage) => this.handleHealthCheck(msg));
     }
 
     /**
@@ -45,7 +45,6 @@ class RegistrationManager{
      * MessageBroker handler function used for registering new services
      */
     private handleRegistrationRequest = async (msg: IBrokerMessage, publisher:MessagePublisher) => {
-        this.handleUnresponsiveServices();
         if(await ServiceDbRequests.getService({UID: msg.messageContent.registrationToken}) === null){
             this.makeNewRegistration(msg,publisher)
         }  
@@ -55,19 +54,31 @@ class RegistrationManager{
      * Register new service, assert queue for message broker and send response to generic service queue.
      */
     private makeNewRegistration = async (msg: IBrokerMessage, publisher:MessagePublisher) => {
-        await ServiceDbRequests.addService(new Service(msg.messageContent,  await this.generateServiceUID(msg.messageContent))).then((service) => {
+        let uid = msg.messageContent.uid
+        if(uid === undefined){
+            uid = await this.generateServiceUID(msg.messageContent.metaData)
+        }
+        await ServiceDbRequests.addService(new Service(msg.messageContent.metaData, uid)).then((service) => {
             publisher.sendMessage(`${service.name}.registration`, new BrokerMessage("assignToken", {registrationToken: service.UID}));
         });
     }
 
     /**
      * Refresh the service healthcheck.
+     * If no service is found with the msg uid, register a service with that uid.
      */
-    private handleHealthCheck = async (msg: IBrokerMessage, publisher:MessagePublisher) => {
-        await ServiceDbRequests.updateStatusByUid(msg.messageContent.uid, msg.messageContent.status)
-
+    private handleHealthCheck = async (msg: IBrokerMessage) => {
+        this.handleUnresponsiveServices();
+        if (await ServiceDbRequests.getService({UID:msg.messageContent.uid}) !== null){
+            await ServiceDbRequests.updateStatusAndHealthCheckByUid(msg.messageContent.uid, msg.messageContent.status)
+        } else {
+            this.makeNewRegistration(msg, this.registrationPublisher)
+        }
     }
 
+    /**
+     * Mark service as unavailable if healthcheck is missed
+     */
     private handleUnresponsiveServices = async () => {
         await ServiceDbRequests.updateAllServicesByHealthCheckAge(5, {status: ServiceStatus.UNAVAILABLE})
     }

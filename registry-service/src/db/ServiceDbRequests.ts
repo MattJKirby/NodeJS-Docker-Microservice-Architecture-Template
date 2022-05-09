@@ -42,7 +42,7 @@ export class ServiceDbRequests {
     /**
      * Find service by uid and update
      */
-    public static updateStatusByUid = async (uid: string, status: ServiceStatus) => {
+    public static updateStatusAndHealthCheckByUid = async (uid: string, status: ServiceStatus) => {
         await ServiceSchema.findOneAndUpdate({UID: uid}, {lastHealthCheck: Date.now(), status: status});
     }
 

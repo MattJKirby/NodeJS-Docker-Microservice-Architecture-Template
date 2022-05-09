@@ -39,20 +39,20 @@ class ServiceInstance {
         this.registrationManager.registerService(this.serviceMetaData, this.status).then(() => {
             this.startRegistrationHealthChecks();
             this.instanceConsumer = new MessageConsumer(MessageBroker, `${this.registrationManager.uid}`);
-            if(this.registrationManager.uid !== undefined){
-                this.instanceConsumer.assertQueue(this.registrationManager.uid, {durable: false, autoDelete: true})
+      
+                this.instanceConsumer.assertQueue(this.registrationManager.uid!, {durable: false, autoDelete: true})
                 this.instanceConsumer.registerMessageHandler("test", (msg: IBrokerMessage) => console.log("TEST",msg));
                 this.instanceConsumer.subscribe();
                 this.status = ServiceStatus.IDLE
-            }  
+            
         })
     }
 
     private startRegistrationHealthChecks = () => {
         setInterval(() => {
-            if(this.registrationManager.uid !== undefined){
-                this.registrationManager.registrationHealthCheck(this.status);
-            }
+        
+            this.registrationManager.registrationRequest("healthCheck",this.status, this.serviceMetaData);
+            
         }, 5000)
     }   
 }
