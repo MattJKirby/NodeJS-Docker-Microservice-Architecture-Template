@@ -41,22 +41,11 @@ export class RegistrationManager {
         this.bindMessageHandlers();
     }
 
-    public registerService = async (registrationMetaData: IServiceMetaData, currentStatus: ServiceStatus) => {
-        const registrationInterval = setInterval(async () => {
-            if(this.uid === undefined && this.registrationPromise === undefined){
-                this.makeRegistrationRequest(registrationMetaData, currentStatus);
-            } else {
-                clearInterval(registrationInterval)
-            }  
-        }, 5000); 
-    }
-
-    public makeRegistrationRequest = async (registrationParams: IServiceMetaData, status: ServiceStatus): Promise<void> =>{
-        this.registrationPromise = new Promise((resolve, reject) => {
+    public registerService = async (registrationParams: IServiceMetaData, status: ServiceStatus): Promise<void> =>{
+        return this.registrationPromise = new Promise((resolve, reject) => {
             this.resolve = resolve
+            this.registrationPublisher.sendMessage(this.config.messageRequestQueue, new BrokerMessage("register", registrationParams));
         });
-        this.registrationPublisher.sendMessage(this.config.messageRequestQueue, new BrokerMessage("register", registrationParams));
-        return this.registrationPromise
     }
 
     private bindMessageHandlers = (): void => {
