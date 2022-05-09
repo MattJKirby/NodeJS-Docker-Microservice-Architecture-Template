@@ -54,10 +54,7 @@ class RegistrationManager{
      * Register new service, assert queue for message broker and send response to generic service queue.
      */
     private makeNewRegistration = async (msg: IBrokerMessage, publisher:MessagePublisher) => {
-        let uid = msg.messageContent.uid
-        if(uid === undefined){
-            uid = await this.generateServiceUID(msg.messageContent.metaData)
-        }
+        let uid = msg.messageContent.uid ==! undefined ? msg.messageContent.uid : await this.generateServiceUID(msg.messageContent.metaData);
         await ServiceDbRequests.addService(new Service(msg.messageContent.metaData, uid)).then((service) => {
             publisher.sendMessage(`${service.name}.registration`, new BrokerMessage("assignToken", {registrationToken: service.UID}));
         });
