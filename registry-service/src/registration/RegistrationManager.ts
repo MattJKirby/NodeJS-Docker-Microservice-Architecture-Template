@@ -52,6 +52,7 @@ class RegistrationManager{
 
     /**
      * Register new service, assert queue for message broker and send response to generic service queue.
+     * If supplied uid is undefined, generate a new uid.
      */
     private makeNewRegistration = async (msg: IBrokerMessage, publisher:MessagePublisher) => {
         let uid = msg.messageContent.uid ==! undefined ? msg.messageContent.uid : await this.generateServiceUID(msg.messageContent.metaData);
