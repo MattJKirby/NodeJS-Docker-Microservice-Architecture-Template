@@ -36,6 +36,7 @@ class ServiceInstance {
     }
 
     public registerService = () => {
+        console.log("Registering")
         this.registrationManager.registerService(this.serviceMetaData, this.status).then(() => {
             this.startRegistrationHealthChecks();
             this.instanceConsumer = new MessageConsumer(MessageBroker, `${this.registrationManager.uid}`);

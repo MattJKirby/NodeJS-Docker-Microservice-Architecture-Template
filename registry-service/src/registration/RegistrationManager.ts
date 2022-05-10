@@ -7,6 +7,7 @@ import { MessagePublisher } from "../messageBroker/MessagePublisher";
 import { IService } from "../service/IService";
 import { Service } from "../service/Service";
 import { ServiceStatus } from "../service/ServiceStatus";
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Service Manager Singleton
@@ -38,7 +39,7 @@ class RegistrationManager{
      * Generates a service uid using name, version and service instance from db.
      */
     private generateServiceUID = async (request: IService): Promise<string> => {
-        return `${request.name}_${request.version}_${(await ServiceDbRequests.getInstances({name: request.name, version: request.version})).length}`;
+        return `${request.name}_${request.version}_${uuidv4()}`;
     }
 
     /**
@@ -46,7 +47,7 @@ class RegistrationManager{
      */
     private handleRegistrationRequest = async (msg: IBrokerMessage, publisher:MessagePublisher) => {
         if(await ServiceDbRequests.getService({UID: msg.messageContent.registrationToken}) === null){
-            this.makeNewRegistration(msg,publisher)
+            await this.makeNewRegistration(msg,publisher)
         }  
     }
 
@@ -59,6 +60,7 @@ class RegistrationManager{
         await ServiceDbRequests.addService(new Service(msg.messageContent.metaData, uid)).then((service) => {
             publisher.sendMessage(`${service.name}.registration`, new BrokerMessage("assignToken", {registrationToken: service.UID}));
         });
+        
     }
 
     /**
