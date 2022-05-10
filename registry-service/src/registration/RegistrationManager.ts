@@ -8,6 +8,8 @@ import { IService } from "../service/IService";
 import { Service } from "../service/Service";
 import { ServiceStatus } from "../service/ServiceStatus";
 import { v4 as uuidv4 } from 'uuid';
+import { InstanceDbRequests } from "../db/InstanceDbRequests";
+import ServiceInstanceSchema from "../../models/ServiceInstanceSchema";
 
 /**
  * Service Manager Singleton
@@ -57,7 +59,8 @@ class RegistrationManager{
      */
     private makeNewRegistration = async (msg: IBrokerMessage, publisher:MessagePublisher) => {
         let uid = msg.messageContent.uid ==! undefined ? msg.messageContent.uid : await this.generateServiceUID(msg.messageContent.metaData);
-        await ServiceDbRequests.addService(new Service(msg.messageContent.metaData, uid)).then((service) => {
+        const instance = (await InstanceDbRequests.incrementInstance(msg.messageContent.metaData.name))
+        await ServiceDbRequests.addService(new Service(msg.messageContent.metaData, uid + '_' + instance.instances)).then((service) => {
             publisher.sendMessage(`${service.name}.registration`, new BrokerMessage("assignToken", {registrationToken: service.UID}));
         });
         
@@ -89,6 +92,7 @@ class RegistrationManager{
     private initaliseRegister = async () => {
         (await this.registrationConsumer.activeChannel).purgeQueue(this.registrationConsumer.queueName);
         await ServiceDbRequests.purgeServices();
+        await InstanceDbRequests.purgeInstances();
         
     }
 
