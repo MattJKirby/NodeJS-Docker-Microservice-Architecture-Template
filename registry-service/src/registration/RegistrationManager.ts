@@ -59,7 +59,7 @@ class RegistrationManager{
      */
     private makeNewRegistration = async (msg: IBrokerMessage, publisher:MessagePublisher) => {
         let uid = msg.messageContent.uid ==! undefined ? msg.messageContent.uid : await this.generateServiceUID(msg.messageContent.metaData);
-        const instance = (await InstanceDbRequests.incrementInstance(msg.messageContent.metaData.name))
+        const instance = (await InstanceDbRequests.incrementInstance(msg.messageContent.metaData.name));
         await ServiceDbRequests.addService(new Service(msg.messageContent.metaData, uid + '_' + instance.instances)).then((service) => {
             publisher.sendMessage(`${service.name}.registration`, new BrokerMessage("assignToken", {registrationToken: service.UID}));
         });
