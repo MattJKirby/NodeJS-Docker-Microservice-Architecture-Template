@@ -2,7 +2,7 @@ import { IService } from "./IService"
 import { ServiceStatus } from "./ServiceStatus"
 
 /**
- * Describes a registered service. TODO: Instances
+ * Describes a registered service. TODO: split this up into Instances
  */
 export class Service implements IService{
     name: string
