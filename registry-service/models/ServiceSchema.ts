@@ -37,6 +37,11 @@ const serviceSchema = new Schema({
          type: String,
          required: true,
         unique: true,
+     },
+     instance: {
+         type: Number,
+         required: true,
+         default: 0,
      }
 
 })
