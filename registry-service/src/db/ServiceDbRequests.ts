@@ -1,15 +1,14 @@
 import ServiceSchema from "../../models/ServiceSchema";
-import { Service } from "../service/Service";
 import { ServiceStatus } from "../service/ServiceStatus";
 
 export class ServiceDbRequests {
     
-    /**
-     * Find Service instances by various service parameters.
-     */
-    public static getInstances = async (queryOptions: {name?: string, version?: string, UID?: string}): Promise<Service[]> => {
-        return await ServiceSchema.find(queryOptions);
-    }
+    // /**
+    //  * Find Service instances by various service parameters.
+    //  */
+    // public static getInstances = async (queryOptions: {name?: string, version?: string, UID?: string}): Promise<Service[]> => {
+    //     return await ServiceSchema.find(queryOptions);
+    // }
 
     /**
      * Get single service by by various service parameters
@@ -21,23 +20,23 @@ export class ServiceDbRequests {
     /**
      * Add a new service to the database
      */
-    public static addService = async (service: Service): Promise<Service> => {
-        try{
-            await ServiceSchema.create({
-                name: service.name, 
-                version: service.version, 
-                hostname: service.hostname, 
-                port: service.port, 
-                registeredAt: service.registeredAt, 
-                lastHealthCheck: service.lastHealthCheck, 
-                status: service.status, 
-                UID: service.UID
-            });
-        } catch(error){
-            console.log(`Error registering service: ${service.UID}. ${error}`)
-        } 
-        return service;
-    }
+    // public static addService = async (service: Service): Promise<Service> => {
+    //     try{
+    //         await ServiceSchema.create({
+    //             name: service.name, 
+    //             version: service.version, 
+    //             hostname: service.hostname, 
+    //             port: service.port, 
+    //             registeredAt: service.registeredAt, 
+    //             lastHealthCheck: service.lastHealthCheck, 
+    //             status: service.status, 
+    //             UID: service.UID
+    //         });
+    //     } catch(error){
+    //         console.log(`Error registering service: ${service.UID}. ${error}`)
+    //     } 
+    //     return service;
+    // }
 
     /**
      * Find service by uid and update

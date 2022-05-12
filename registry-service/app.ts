@@ -5,7 +5,6 @@ import axios from 'axios';
 import mongoose from 'mongoose';
 import MongoConnection from './src/utility/MongoConnection';
 import  ServiceSchema  from './models/ServiceSchema'
-import { Service } from './src/service/Service';
 import { routes } from './routes/Routes';
 
 
