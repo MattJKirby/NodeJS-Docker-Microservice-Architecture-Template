@@ -32,4 +32,4 @@ const instanceSchema = new Schema({
     },
 });
 
-export default mongoose.model('Instance', instanceSchema)
+export default instanceSchema
