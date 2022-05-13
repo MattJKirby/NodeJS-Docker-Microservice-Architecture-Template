@@ -24,8 +24,9 @@ class RegistrationManager{
         this.registrationConsumer.subscribe();
 
         this.registrationPublisher = new MessagePublisher(MessageBroker);
-        this.bindMessageHandlers(); 
         this.initaliseRegister()
+        this.bindMessageHandlers(); 
+        
     }
 
     /**
