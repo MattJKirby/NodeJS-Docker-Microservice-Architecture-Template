@@ -21,11 +21,9 @@ class ServiceRegistrationFactory {
      */
     public static newRegistration = (serviceMetaData: IServiceMetaData, uid: string): ServiceRegistration => {
         if(uid === undefined) {
-            uid = ServiceRegistrationFactory.generateServiceUid(serviceMetaData);
-            return new ServiceRegistration(serviceMetaData.name, serviceMetaData.version, new ServiceInstance(serviceMetaData.hostname, serviceMetaData.port, uid));
-        } else {
-            throw new Error("Can't create registration for existing service.")
+            uid = ServiceRegistrationFactory.generateServiceUid(serviceMetaData); 
         } 
+        return new ServiceRegistration(serviceMetaData.name, serviceMetaData.version, new ServiceInstance(serviceMetaData.hostname, serviceMetaData.port, uid));
     }
 }
 
