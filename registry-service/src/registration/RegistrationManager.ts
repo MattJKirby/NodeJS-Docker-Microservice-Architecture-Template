@@ -7,6 +7,8 @@ import { MessagePublisher } from "../messageBroker/MessagePublisher";
 import { ServiceStatus } from "../service/ServiceStatus";
 import ServiceSchema from "../../models/ServiceSchema";
 import ServiceRegistrationFactory from "./ServiceRegistrationFactory";
+import { ServiceRegistration } from "../service/ServiceRegistration";
+import InstanceSchema from "../../models/InstanceSchema";
 
 /**
  * Service Manager Singleton
@@ -34,27 +36,23 @@ class RegistrationManager{
         this.registrationConsumer.registerMessageHandler("healthCheck", (msg: IBrokerMessage) => this.handleHealthCheck(msg));
     }
 
-    
-
     /**
      * MessageBroker handler function used for registering new services
      */
     private handleRegistrationRequest = async (msg: IBrokerMessage, publisher:MessagePublisher) => {
-            await this.newRegistration(msg,publisher)
-
+        this.newRegistration(msg,publisher).then((registration) => {
+            publisher.sendMessage(`${registration.name}.registration`, new BrokerMessage("assignToken", {registrationToken: registration.instance.uid}));
+        })
     }
 
     /**
      * Register new service, assert queue for message broker and send response to generic service queue.
      * If supplied uid is undefined, generate a new uid.
      */
-    private newRegistration = async (msg: IBrokerMessage, publisher:MessagePublisher) => {
-        try{
-            const registration = ServiceRegistrationFactory.newRegistration(msg.messageContent.metaData, msg.messageContent.uid);
-            await ServiceSchema.findOneAndUpdate({name: registration.name, version: registration.version}, { $push: { instances: registration.instance }}, {upsert: true, new: true})
-        } catch (error) {
-            console.log(`Error registering service: ${msg.messageContent.uid}`)
-        }
+    private newRegistration = async (msg: IBrokerMessage, publisher:MessagePublisher):Promise<ServiceRegistration> => {
+        const registration = ServiceRegistrationFactory.newRegistration(msg.messageContent.metaData, msg.messageContent.uid);
+        await ServiceSchema.findOneAndUpdate({name: registration.name, version: registration.version}, { $push: { instances: registration.instance }}, {upsert: true});
+        return registration; 
     }
 
     /**
@@ -63,10 +61,11 @@ class RegistrationManager{
      */
     private handleHealthCheck = async (msg: IBrokerMessage) => {
         this.handleUnresponsiveServices();
-        if (await ServiceDbRequests.getService({UID:msg.messageContent.uid}) !== null){
+        console.log("console", await ServiceDbRequests.getServiceInstance({"instances.uid": msg.messageContent.uid}) !== null)
+        if (await ServiceDbRequests.getServiceInstance({"instances.uid": msg.messageContent.uid}) !== null){
             await ServiceDbRequests.updateStatusAndHealthCheckByUid(msg.messageContent.uid, msg.messageContent.status)
         } else {
-            this.newRegistration(msg, this.registrationPublisher)
+            await this.newRegistration(msg, this.registrationPublisher)
         }
     }
 
@@ -74,16 +73,18 @@ class RegistrationManager{
      * Mark service as unavailable if healthcheck is missed
      */
     private handleUnresponsiveServices = async () => {
-        await ServiceDbRequests.updateAllServicesByHealthCheckAge(5, {status: ServiceStatus.UNAVAILABLE})
+        await ServiceDbRequests.updateAllServicesByHealthCheckAge(5, {"instances.$[].status": ServiceStatus.UNAVAILABLE})
     }
 
     /**
      * Flush all registration records and any pending registration queue messages.
      */
-    private initaliseRegister = async () => {
-        (await this.registrationConsumer.activeChannel).purgeQueue(this.registrationConsumer.queueName);
-        await ServiceDbRequests.purgeServices();
+    private initaliseRegister = () => {
+        ServiceDbRequests.purgeServices();
         
+        this.registrationConsumer.activeChannel.then(channel => {
+            channel.purgeQueue(this.registrationConsumer.queueName);
+        });
     }
 
     public test = async (uid: string) => {
