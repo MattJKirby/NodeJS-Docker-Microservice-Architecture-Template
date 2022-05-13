@@ -13,7 +13,7 @@ const serviceSchema = new Schema({
          required: true 
      },
      instances: {
-         type: [InstanceSchema.schema],
+         type: [InstanceSchema],
          required: true,
          validate: [notEmpty, "At least one service instance required!"],
          _id: false
