@@ -1,5 +1,7 @@
 import mongoose, { Schema } from 'mongoose'
 import { ServiceStatus } from '../src/service/ServiceStatus'
+import InstanceSchema from './InstanceSchema'
+import { notEmpty } from './validations/instanceSchemaValidations'
 
 const serviceSchema = new Schema({
      name: {
@@ -10,38 +12,11 @@ const serviceSchema = new Schema({
          type: String,
          required: true 
      },
-     hostname: {
-         type: String,
+     instances: {
+         type: [InstanceSchema],
          required: true,
-         default: '127.0.0.1'
-     },
-     port: {
-        type: Number,
-        required: true 
-     },
-     registeredAt: {
-         type: Date,
-         required: true
-     },
-     lastHealthCheck: {
-         type: Date,
-         required : true
-     },
-     status: {
-         type: String,
-         retuired: true,
-         enum: ServiceStatus,
-         default: ServiceStatus.INITIALIZING
-     },
-     UID: {
-         type: String,
-         required: true,
-        unique: true,
-     },
-     instance: {
-         type: Number,
-         required: true,
-         default: 0,
+         validate: [notEmpty, "At least one service instance required!"],
+         _id: false
      }
 
 })

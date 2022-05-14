@@ -4,12 +4,11 @@ import { IBrokerMessage } from "../messageBroker/IBrokerMessage";
 import MessageBroker from "../messageBroker/MessageBroker";
 import { MessageConsumer } from "../messageBroker/MessageConsumer";
 import { MessagePublisher } from "../messageBroker/MessagePublisher";
-import { IService } from "../service/IService";
-import { Service } from "../service/Service";
 import { ServiceStatus } from "../service/ServiceStatus";
-import { v4 as uuidv4 } from 'uuid';
-import { InstanceDbRequests } from "../db/InstanceDbRequests";
-import ServiceInstanceSchema from "../../models/ServiceInstanceSchema";
+import ServiceSchema from "../../models/ServiceSchema";
+import ServiceRegistrationFactory from "./ServiceRegistrationFactory";
+import { ServiceRegistration } from "../service/ServiceRegistration";
+import InstanceSchema from "../../models/InstanceSchema";
 
 /**
  * Service Manager Singleton
@@ -25,8 +24,9 @@ class RegistrationManager{
         this.registrationConsumer.subscribe();
 
         this.registrationPublisher = new MessagePublisher(MessageBroker);
-        this.bindMessageHandlers(); 
-        this.initaliseRegister()
+        this.initaliseRegister().then(() => {
+            this.bindMessageHandlers(); 
+        }) 
     }
 
     /**
@@ -38,32 +38,24 @@ class RegistrationManager{
     }
 
     /**
-     * Generates a service uid using name, version and service instance from db.
-     */
-    private generateServiceUID = async (request: IService): Promise<string> => {
-        return `${request.name}_${request.version}_${uuidv4()}`;
-    }
-
-    /**
      * MessageBroker handler function used for registering new services
      */
     private handleRegistrationRequest = async (msg: IBrokerMessage, publisher:MessagePublisher) => {
-        if(await ServiceDbRequests.getService({UID: msg.messageContent.registrationToken}) === null){
-            await this.makeNewRegistration(msg,publisher)
-        }  
+        this.newRegistration(msg,publisher).then((registration) => {
+            publisher.sendMessage(`${registration.name}.registration`, new BrokerMessage("assignToken", {registrationToken: registration.instance.uid}));
+        })
     }
 
     /**
      * Register new service, assert queue for message broker and send response to generic service queue.
      * If supplied uid is undefined, generate a new uid.
      */
-    private makeNewRegistration = async (msg: IBrokerMessage, publisher:MessagePublisher) => {
-        let uid = msg.messageContent.uid ==! undefined ? msg.messageContent.uid : await this.generateServiceUID(msg.messageContent.metaData);
-        const instance = (await InstanceDbRequests.incrementInstance(msg.messageContent.metaData.name));
-        await ServiceDbRequests.addService(new Service(msg.messageContent.metaData, uid + '_' + instance.instances)).then((service) => {
-            publisher.sendMessage(`${service.name}.registration`, new BrokerMessage("assignToken", {registrationToken: service.UID}));
-        });
-        
+    private newRegistration = async (msg: IBrokerMessage, publisher:MessagePublisher):Promise<ServiceRegistration> => {
+        const registration = ServiceRegistrationFactory.newRegistration(msg.messageContent.metaData, msg.messageContent.uid);
+        console.log(`Registering: ${registration.instance.uid}`)
+       
+        await ServiceSchema.findOneAndUpdate({name: registration.name, version: registration.version}, { $addToSet: { instances: registration.instance }}, {upsert: true});
+        return registration; 
     }
 
     /**
@@ -72,10 +64,10 @@ class RegistrationManager{
      */
     private handleHealthCheck = async (msg: IBrokerMessage) => {
         this.handleUnresponsiveServices();
-        if (await ServiceDbRequests.getService({UID:msg.messageContent.uid}) !== null){
+        if (await ServiceDbRequests.getServiceInstance({"instances.uid": msg.messageContent.uid}) !== null){
             await ServiceDbRequests.updateStatusAndHealthCheckByUid(msg.messageContent.uid, msg.messageContent.status)
         } else {
-            this.makeNewRegistration(msg, this.registrationPublisher)
+            await this.newRegistration(msg, this.registrationPublisher)
         }
     }
 
@@ -83,17 +75,16 @@ class RegistrationManager{
      * Mark service as unavailable if healthcheck is missed
      */
     private handleUnresponsiveServices = async () => {
-        await ServiceDbRequests.updateAllServicesByHealthCheckAge(5, {status: ServiceStatus.UNAVAILABLE})
+        await ServiceDbRequests.updateAllServicesByHealthCheckAge(5, {"instances.$[].status": ServiceStatus.UNAVAILABLE})
     }
 
     /**
      * Flush all registration records and any pending registration queue messages.
      */
     private initaliseRegister = async () => {
-        (await this.registrationConsumer.activeChannel).purgeQueue(this.registrationConsumer.queueName);
         await ServiceDbRequests.purgeServices();
-        await InstanceDbRequests.purgeInstances();
-        
+        (await this.registrationConsumer.activeChannel).purgeQueue(this.registrationConsumer.queueName);
+       
     }
 
     public test = async (uid: string) => {

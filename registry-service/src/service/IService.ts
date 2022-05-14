@@ -5,5 +5,5 @@ export interface IService {
     port: number;
     registeredAt: Date;
     lastHealthCheck: Date;
-    UID?: string;
+    uid?: string;
 }
