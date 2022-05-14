@@ -48,11 +48,6 @@ export class MessageBroker{
      */
     readonly connectionAttemptInterval: number =  5000
 
-    /**
-     * All registered message handlers, used for handing messages by token.
-     */
-    private registeredMessageHandlers: Array<MessageHandler> = [];
-
     constructor(RMQSettings: {protocol: string, hostname: string, port: number, username: string, password: string}){
         this.protocol = RMQSettings.protocol;
         this.hostname = RMQSettings.hostname;
