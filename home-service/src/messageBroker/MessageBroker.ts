@@ -1,4 +1,5 @@
 import amqp, { Options } from "amqplib";
+import { IMqConfig } from "../../configuration/ConfigurationTypes";
 import config from '../../configuration/default'
 import { MessageHandler } from "./MessageHandler";
 
@@ -14,19 +15,9 @@ export class MessageBroker{
     activeConnection: Promise<amqp.Connection>
 
     /**
-     * Protocol used for establishing RabbitMQ connection.
+     * RMQ settings from app config
      */
-    protocol: string
-
-    /**
-     * Hostname used for establishing RabbitMQ connection.
-     */
-    hostname: string
-
-    /**
-     * port number used for establishing RabbitMQ connection.
-     */
-    port: number
+    private rmqSettings: IMqConfig
 
     /**
      * RabbitMQ authentication mechanism.
@@ -34,27 +25,12 @@ export class MessageBroker{
     readonly authMechanisim = ['PLAIN', 'AMQPLAIN', 'EXTERNAL']
 
     /**
-     * Username for connecting to rabbitMQ
-     */
-    private username: string;
-
-    /**
-     * Password for connecting to RabbitMQ
-     */
-    private password: string
-
-    /**
      * ConnectionAttemptInterval
      */
     readonly connectionAttemptInterval: number =  5000
 
-    constructor(RMQSettings: {protocol: string, hostname: string, port: number, username: string, password: string}){
-        this.protocol = RMQSettings.protocol;
-        this.hostname = RMQSettings.hostname;
-        this.port = RMQSettings.port;
-        this.username = RMQSettings.username;
-        this.password = RMQSettings.password;
-
+    constructor(mqSettings: IMqConfig){
+        this.rmqSettings = mqSettings;
         this.activeConnection = this.establishConnection();
     }
 
@@ -81,17 +57,13 @@ export class MessageBroker{
     };
 
     private attemptConnection = async (): Promise<amqp.Connection> => {
-        try {
-            return await amqp.connect({protocol: this.protocol, hostname: this.hostname, port: this.port, username: this.username, password: this.password});
-        } catch (err) {
-            throw("Failed to connect to to RabbitMQ")
-        }
+        return await amqp.connect({protocol: this.rmqSettings.protocol, hostname: this.rmqSettings.hostname, 
+            port: this.rmqSettings.port, username: this.rmqSettings.username, password: this.rmqSettings.password});
     }
 
     public prepareChannel = async ():Promise<amqp.Channel> => {
-        const connection = await this.activeConnection;
-        const channel = connection.createChannel();
-        return channel;
+        const connection = await this.activeConnection;     
+        return connection.createChannel();
     }
 }
 

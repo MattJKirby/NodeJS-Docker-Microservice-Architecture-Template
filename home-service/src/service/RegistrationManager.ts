@@ -61,5 +61,6 @@ export class RegistrationManager {
     public registrationRequest = async(registrationType: string, status: ServiceStatus, meta: IServiceMetaData) => {
         this.registrationPublisher.sendMessage(this.config.messageRequestQueue,new BrokerMessage(registrationType, {uid: this.uid, status: status, metaData: meta}));
     }
+    
 
 }

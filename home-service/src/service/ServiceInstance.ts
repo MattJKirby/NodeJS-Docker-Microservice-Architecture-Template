@@ -1,13 +1,11 @@
-import { IAppConfig, IEnvironmentConfig } from '../../configuration/ConfigurationTypes';
 import config from '../../configuration/default'
-import { BrokerMessage } from '../messageBroker/BrokerMessage';
 import { IBrokerMessage } from '../messageBroker/IBrokerMessage';
 import MessageBroker from '../messageBroker/MessageBroker'
 import { MessageConsumer } from '../messageBroker/MessageConsumer';
-import { MessagePublisher } from '../messageBroker/MessagePublisher';
-import { IServiceMetaData, ServiceMetaData } from './ServiceMetaData';
+import { ServiceMetaData } from './ServiceMetaData';
 import { RegistrationManager } from './RegistrationManager';
 import { ServiceStatus } from './ServiceStatus';
+import { IEnvironmentConfig } from '../../configuration/ConfigurationTypes';
 
 /**
  * Service Instance Singleton
@@ -28,6 +26,9 @@ class ServiceInstance {
      */
     registrationManager: RegistrationManager
 
+    /**
+     * Message consumer that consumes messages directy to this service by it's regisered uid.
+     */
     instanceConsumer?: MessageConsumer
 
     constructor(config: IEnvironmentConfig){
@@ -38,22 +39,26 @@ class ServiceInstance {
     public registerService = () => {
         console.log("Registering")
         this.registrationManager.registerService(this.serviceMetaData, this.status).then(() => {
-            this.startRegistrationHealthChecks();
-            this.instanceConsumer = new MessageConsumer(MessageBroker, `${this.registrationManager.uid}`);
-      
-                this.instanceConsumer.assertQueue(this.registrationManager.uid!, {durable: false, autoDelete: true})
-                this.instanceConsumer.registerMessageHandler("test", (msg: IBrokerMessage) => console.log("TEST",msg));
-                this.instanceConsumer.subscribe();
-                this.status = ServiceStatus.IDLE
-            
+            this.initializeMessageConsumer();
+            this.startHealthChecks();  
+            this.status = ServiceStatus.IDLE;
         })
     }
 
-    private startRegistrationHealthChecks = () => {
+    private initializeMessageConsumer = () => {
+        this.instanceConsumer = new MessageConsumer(MessageBroker, `${this.registrationManager.uid}`);
+        this.instanceConsumer.assertQueue(this.registrationManager.uid!, {durable: false, autoDelete: true});
+        this.instanceConsumer.subscribe();
+        this.bindInstanceMessageHandlers(this.instanceConsumer);
+    }
+
+    private bindInstanceMessageHandlers = (consumer: MessageConsumer) => {
+        consumer.registerMessageHandler("test", (msg: IBrokerMessage) => console.log("TEST",msg));
+    }
+
+    private startHealthChecks = () => {
         setInterval(() => {
-        
             this.registrationManager.registrationRequest("healthCheck",this.status, this.serviceMetaData);
-            
         }, 5000)
     }   
 }

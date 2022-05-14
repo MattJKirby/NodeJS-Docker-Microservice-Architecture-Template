@@ -45,6 +45,6 @@ export class MessageConsumer extends BrokerAction{
 
     public unsubscribe = async () => {
         const channel = await this.activeChannel;
-        channel.close();
+        await channel.close();
     }
 }
