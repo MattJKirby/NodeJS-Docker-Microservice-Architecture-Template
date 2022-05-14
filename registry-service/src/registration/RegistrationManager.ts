@@ -24,9 +24,9 @@ class RegistrationManager{
         this.registrationConsumer.subscribe();
 
         this.registrationPublisher = new MessagePublisher(MessageBroker);
-        this.initaliseRegister()
-        this.bindMessageHandlers(); 
-        
+        this.initaliseRegister().then(() => {
+            this.bindMessageHandlers(); 
+        }) 
     }
 
     /**
@@ -52,7 +52,9 @@ class RegistrationManager{
      */
     private newRegistration = async (msg: IBrokerMessage, publisher:MessagePublisher):Promise<ServiceRegistration> => {
         const registration = ServiceRegistrationFactory.newRegistration(msg.messageContent.metaData, msg.messageContent.uid);
-        await ServiceSchema.findOneAndUpdate({name: registration.name, version: registration.version}, { $push: { instances: registration.instance }}, {upsert: true});
+        console.log(`Registering: ${registration.instance.uid}`)
+       
+        await ServiceSchema.findOneAndUpdate({name: registration.name, version: registration.version}, { $addToSet: { instances: registration.instance }}, {upsert: true});
         return registration; 
     }
 
@@ -62,7 +64,6 @@ class RegistrationManager{
      */
     private handleHealthCheck = async (msg: IBrokerMessage) => {
         this.handleUnresponsiveServices();
-        console.log("console", await ServiceDbRequests.getServiceInstance({"instances.uid": msg.messageContent.uid}) !== null)
         if (await ServiceDbRequests.getServiceInstance({"instances.uid": msg.messageContent.uid}) !== null){
             await ServiceDbRequests.updateStatusAndHealthCheckByUid(msg.messageContent.uid, msg.messageContent.status)
         } else {
@@ -80,12 +81,10 @@ class RegistrationManager{
     /**
      * Flush all registration records and any pending registration queue messages.
      */
-    private initaliseRegister = () => {
-        ServiceDbRequests.purgeServices();
-        
-        this.registrationConsumer.activeChannel.then(channel => {
-            channel.purgeQueue(this.registrationConsumer.queueName);
-        });
+    private initaliseRegister = async () => {
+        await ServiceDbRequests.purgeServices();
+        (await this.registrationConsumer.activeChannel).purgeQueue(this.registrationConsumer.queueName);
+       
     }
 
     public test = async (uid: string) => {
