@@ -21,14 +21,14 @@ const instanceSchema = new Schema({
     },
     status: {
         type: String,
-        retuired: true,
+        required: true,
         enum: ServiceStatus,
         default: ServiceStatus.INITIALIZING
     },
     uid: {
         type: String,
         required: true,
-       unique: true,
+        unique: true,
     },
 });
 
