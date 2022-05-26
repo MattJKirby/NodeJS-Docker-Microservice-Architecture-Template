@@ -1,3 +1,4 @@
+import config from '../../configuration/default'
 import amqp, { Channel, Connection, Options } from "amqplib";
 import { IMqConfig } from "../../configuration/ConfigurationTypes";
 
@@ -10,14 +11,17 @@ export class mqConnection {
     /**
      * Active rabbitMQ connection
      */
-    public activeConnection: Promise<Connection>
+    public activeConnection?: Promise<Connection>
 
-    constructor(mqSettings: IMqConfig){
-        this.mqSettings = mqSettings
-        this.activeConnection = this.attemptConnection();
+    constructor(mqSettings: IMqConfig, connectionOptions?: {newConnection?: boolean}){
+        this.mqSettings = mqSettings;
+
+        if(connectionOptions?.newConnection === true){
+            this.activeConnection = this.connect();
+        }
     }
 
-    private attemptConnection = (): Promise<Connection> => {
+    public connect = async (): Promise<Connection> => {
         return new Promise(async (resolve) => {
             const interval = setInterval(async () => {
                 try{
@@ -30,3 +34,5 @@ export class mqConnection {
         });
     }
 }
+
+export default new mqConnection(config.mqSettings, {newConnection: true})
