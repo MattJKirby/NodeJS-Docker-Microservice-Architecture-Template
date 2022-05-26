@@ -1,38 +1,38 @@
 import mongoose from 'mongoose';
 import config from '../../configuration/default'
+import { IDatabaseConnection } from './IDatabaseConnection';
 
 /**
  * Mongo Connection singleton
  */
-class MongoConnection{
+class MongoConnection implements IDatabaseConnection<typeof mongoose>{
     hostname: string
     databaseName: string
     port: number
+    connection: Promise<typeof mongoose>
 
     constructor(config: {host: string, name: string, port: number}){
         this.hostname = config.host;
         this.databaseName = config.name;
         this.port = config.port;
+    
+        this.connection = this.initaliseDbConnection();
     }
 
     /**
      * Construct a mongodb connection uri with the given parameters
      * @returns 
      */
-    private constructMongoConnectionUri = (): string => {
+    private constructConnectionUri = (): string => {
         return `mongodb://${this.hostname}:${this.port}/${this.databaseName}`
     }
 
     /**
      * Initalise a new mongodb connection
      */
-    public initaliseConnection = async () => {
-        try{
-            await mongoose.connect(this.constructMongoConnectionUri())
-        } catch(err) {
-            console.log(err)
-        }
+    public initaliseDbConnection = (): Promise<typeof mongoose> => {
+        return mongoose.connect(this.constructConnectionUri())
     }
 }
 
-export default new MongoConnection(config.db)
+export default new MongoConnection(config.db);
