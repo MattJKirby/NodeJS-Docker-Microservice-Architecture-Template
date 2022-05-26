@@ -34,5 +34,5 @@ export interface IMqConfig {
 
 export interface IRegistrationConfig {
     readonly messageRequestQueue: string
-    readonly genericResponseQueue: string
+    readonly serviceResponseQueue: string
 }
