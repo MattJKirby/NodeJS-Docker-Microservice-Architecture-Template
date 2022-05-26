@@ -1,12 +1,13 @@
 import express, {Application, Request, Response} from 'express';
 import Config from './configuration/default';
-
 import ServiceInstance from './src/service/ServiceInstance';
-
 
 const app:Application = express();
 
+
 // Configure the rabbitMQ message broker system
+
+//Handles service registration and healthChecks with service registry
 ServiceInstance.registerService();
 
 app.use(express.json());
