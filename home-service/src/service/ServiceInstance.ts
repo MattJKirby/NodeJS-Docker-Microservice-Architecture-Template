@@ -6,6 +6,10 @@ import { ServiceMetaData } from './ServiceMetaData';
 import { RegistrationManager } from './RegistrationManager';
 import { ServiceStatus } from './ServiceStatus';
 import { IEnvironmentConfig } from '../../configuration/ConfigurationTypes';
+import { IMessageBroker } from '../messageConnector/IMessageBroker';
+import { mqConsumer } from '../messageConnector/mqConsumer';
+import { mqPublisher } from '../messageConnector/mqPublisher';
+
 
 /**
  * Service Instance Singleton
@@ -37,7 +41,6 @@ class ServiceInstance {
     }
 
     public registerService = () => {
-        console.log("Registering")
         this.registrationManager.registerService(this.serviceMetaData, this.status).then(() => {
             this.initializeMessageConsumer();
             this.startHealthChecks();  
