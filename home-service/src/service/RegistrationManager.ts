@@ -10,6 +10,7 @@ import { IMessageBroker } from "../messageConnector/IMessageBroker";
 import { mqPublisher } from "../messageConnector/mqPublisher";
 import { mqConsumer } from "../messageConnector/mqConsumer";
 import mqConnection from "../messageConnector/mqConnection";
+import { mqChannelProvider } from "../messageConnector/mqChannelProvider";
 
 
 export class RegistrationManager implements IMessageBroker {
@@ -31,7 +32,7 @@ export class RegistrationManager implements IMessageBroker {
     /**
      * Used for consuming registration messages
      */
-    brokerConsumer: mqConsumer =  new mqConsumer(mqConnection);
+    brokerConsumer: mqConsumer =  new mqConsumer(mqConnection, {persistingChannel: true});
 
     registrationPromise?: Promise<void>
     
@@ -40,7 +41,7 @@ export class RegistrationManager implements IMessageBroker {
     constructor(registrationConfig: IRegistrationConfig){
         this.config = registrationConfig;
       
-        this.brokerConsumer.subscribe(this.config.serviceResponseQueue);
+        this.brokerConsumer.subscribe(this.config.serviceResponseQueue, {usePersistingChannel: true});
         this.bindMessageHandlers();
     }
 
@@ -57,10 +58,11 @@ export class RegistrationManager implements IMessageBroker {
 
     private handleRegistration = async (msg: IBrokerMessage): Promise<void> => {
         this.uid = msg.messageContent.registrationToken;
+        this.brokerConsumer.closeActiveChannel();
         this.resolve();
     }
 
     public registrationRequest = async(registrationType: string, status: ServiceStatus, meta: IServiceMetaData) => {
-        this.brokerPublisher.sendMessage(this.config.messageRequestQueue,new BrokerMessage(registrationType, {uid: this.uid, status: status, metaData: meta}));
+        this.brokerPublisher.sendMessage(this.config.messageRequestQueue,new BrokerMessage(registrationType, {uid: this.uid, status: status, metaData: meta}),{usePersistingChannel: true});
     }
 }
