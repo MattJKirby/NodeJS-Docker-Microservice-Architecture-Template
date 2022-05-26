@@ -8,13 +8,14 @@ import { ServiceStatus } from "../service/ServiceStatus";
 import ServiceSchema from "../../models/ServiceSchema";
 import ServiceRegistrationFactory from "./ServiceRegistrationFactory";
 import { ServiceRegistration } from "../service/ServiceRegistration";
-import InstanceSchema from "../../models/InstanceSchema";
+import { IDatabaseConnection } from "../utility/IDatabaseConnection";
+import mongoose from "mongoose";
 
 /**
- * Service Manager Singleton
+ * Service Manager 
  * Controls the registration, handles updates, renewals and deletion of services.
  */
-class RegistrationManager{
+export class RegistrationManager {
     readonly queueStub: string = ".registration";
     registrationConsumer: MessageConsumer
     registrationPublisher: MessagePublisher
@@ -92,5 +93,3 @@ class RegistrationManager{
         this.registrationPublisher.sendMessage(`${uid}`, new BrokerMessage("test", {test: uid}))  
     }
 }
-
-export default new RegistrationManager();
