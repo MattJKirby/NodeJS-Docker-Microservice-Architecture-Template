@@ -3,9 +3,13 @@ import { mqConnection } from "./mqConnection";
 
 export class mqChannelProvider {
     private connection: mqConnection
+    public activeChannel?: Promise<Channel>
 
-    constructor(connection: mqConnection){
+    constructor(connection: mqConnection, options?: {persistingChannel?: boolean}){
         this.connection = connection;
+        if(options?.persistingChannel){
+            this.activeChannel = this.openChannel();
+        }
     }
 
     public openChannel = async (): Promise<amqp.Channel> => {
@@ -18,8 +22,8 @@ export class mqChannelProvider {
         };
     }
 
-    public static closeActiveChannel = async (channel: Channel):Promise<void> => {
-        await channel?.close();
+    public closeActiveChannel = async ():Promise<void> => {
+        await (await this.activeChannel)?.close();
     }
 
     public assertQueue = async (queueName: string, channelOptions?: Options.AssertQueue): Promise<void> => {

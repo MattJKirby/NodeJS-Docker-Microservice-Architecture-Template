@@ -2,26 +2,32 @@ import { mqMessage } from "./mqMessage"
 import { mqChannelProvider as mqChannelProvider } from "./mqChannelProvider";
 import { mqHandler } from "./mqHandler";
 import { mqConnection } from "./mqConnection";
+import { Channel } from "amqplib";
 
 export class mqConsumer extends mqChannelProvider {
     private registeredHandlers: Array<mqHandler> = [];
 
-    constructor(connection: mqConnection){
-        super(connection);
+    constructor(connection: mqConnection, options?: {persistingChannel?: boolean}){
+        super(connection, options);
     }
 
-    public subscribe = async (queue: string) => {
-        const channel = await this.openChannel();
-        if(channel !== undefined){
-            channel.consume(queue, (msg) => {
-                try{
-                    const messageContent = JSON.parse(msg!.content.toString());
-                    this.executeHandler(messageContent, queue);
-                    channel.ack(msg!)
-                } catch (err){
-                    channel.nack(msg!);
-                }
-            })
+    public subscribe = async (queue: string, options?: {usePersistingChannel?: boolean}) => {
+        let channel = this.activeChannel;
+        if(!options?.usePersistingChannel)
+            channel = this.openChannel();
+
+        channel?.then(ch => {
+            ch.consume(queue, (msg) => this.parseReceivedMessage(ch, queue, msg));
+        });
+    }
+
+    private parseReceivedMessage = (channel: Channel, queue: string, msg: any): void => {
+        try{
+            const messageContent = JSON.parse(msg.content.toString());
+            this.executeHandler(messageContent, queue);
+            channel.ack(msg)
+        } catch (err){
+            channel.nack(msg);
         }
     }
 
