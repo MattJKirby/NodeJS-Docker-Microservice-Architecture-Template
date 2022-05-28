@@ -1,14 +1,11 @@
 import { IRegistrationConfig } from "../../configuration/ConfigurationTypes";
 import Config from '../../configuration/default'
-import { IBrokerMessage } from "../messageBroker/IBrokerMessage";
-import { BrokerMessage } from "../messageBroker/BrokerMessage";
 import { ServiceStatus } from "./ServiceStatus";
 import { IServiceMetaData, ServiceMetaData } from "./ServiceMetaData";
-import { IMessageBroker } from "../messageConnector/IMessageBroker";
 import { mqPublisher } from "../messageConnector/mqPublisher";
 import { mqConsumer } from "../messageConnector/mqConsumer";
 import mqConnection from "../messageConnector/mqConnection";
-import { mqChannelProvider } from "../messageConnector/mqChannelProvider";
+import { mqMessage } from "../messageConnector/mqMessage";
 
 
 export class RegistrationManager {
@@ -33,7 +30,7 @@ export class RegistrationManager {
         this.config = registrationConfig;
       
         this.brokerConsumer.subscribe(this.config.serviceResponseQueue, {usePersistingChannel: true});
-        this.brokerConsumer.registerMessageHandler(this.config.serviceResponseQueue, "assignToken", async (msg: IBrokerMessage) => await this.handleRegistration(msg));
+        this.brokerConsumer.registerMessageHandler(this.config.serviceResponseQueue, "assignToken", async (msg: mqMessage) => await this.handleRegistration(msg));
     }
 
     public registerService = async (meta: IServiceMetaData, status: ServiceStatus): Promise<string> =>{
@@ -43,13 +40,13 @@ export class RegistrationManager {
         });
     }
 
-    private handleRegistration = async (msg: IBrokerMessage): Promise<void> => {
+    private handleRegistration = async (msg: mqMessage): Promise<void> => {
         this.brokerConsumer.closeActiveChannel();
         this.resolve(msg.messageContent.registrationToken);
     }
 
     public registrationRequest = async(status: ServiceStatus, meta: IServiceMetaData, uid?: string) => {
-        this.brokerPublisher.sendMessage(this.config.messageRequestQueue,new BrokerMessage("register", {uid: uid, status: status, metaData: meta}),{usePersistingChannel: true});
+        this.brokerPublisher.sendMessage(this.config.messageRequestQueue,new mqMessage("register", {uid: uid, status: status, metaData: meta}),{usePersistingChannel: true});
     }
 }
 
