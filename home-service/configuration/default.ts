@@ -24,7 +24,7 @@ const Config: IConfig = {
         },
         serviceRegistration: {
             messageRequestQueue: "registry-service.registration",
-            genericResponseQueue: "home-service.registration"
+            serviceResponseQueue: "home-service.registration"
         }
     },
 
@@ -50,7 +50,7 @@ const Config: IConfig = {
         },
         serviceRegistration: {
             messageRequestQueue: "registry-service.registration",
-            genericResponseQueue: "home-service.registration"
+            serviceResponseQueue: "home-service.registration"
         }
     }
 }

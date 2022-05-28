@@ -1,6 +1,6 @@
-import { IBrokerMessage } from "./IBrokerMessage";
+import { mqMessage } from "./mqMessage";
 
-export class MessageHandler {
+export class mqHandler {
     /**
      * Queue that the message handler will act on.
      */
@@ -8,20 +8,20 @@ export class MessageHandler {
     /**
      * Unique token for accessing registered handler methods.
      */
-    public uniqueToken: string
+    public handlerToken: string
 
     /**
      * Function for handling message.
      */
     private handlerFunction: Function
 
-    constructor(queue: string, uniqueToken: string, handlerFunction: Function){
+    constructor(queue: string, handlerToken: string, handlerFunction: Function){
         this.handlerQueue = queue;
-        this.uniqueToken = uniqueToken;
+        this.handlerToken = handlerToken;
         this.handlerFunction = handlerFunction;
     }
 
-    public invokeHandler(message: IBrokerMessage){
+    public invokeHandler(message: mqMessage){
         this.handlerFunction(message);
     }
 }

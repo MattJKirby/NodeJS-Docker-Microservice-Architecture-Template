@@ -3,16 +3,16 @@ import config from './configuration/default'
 import cors from "cors";
 import axios from 'axios';
 import mongoose from 'mongoose';
-import MongoConnection from './src/utility/MongoConnection';
-import  ServiceSchema  from './models/ServiceSchema'
+
 import { routes } from './routes/Routes';
+import { RegistrationManager } from './src/registration/RegistrationManager';
 
 
 // Server configuration
 const server:Application = express();
 
-// Initalise connection to mongodb
-MongoConnection.initaliseConnection();
+//Initialise registration Manager 
+const registrationManager = new RegistrationManager()
 
 // Express and routes configuration
 server.use(express.json());

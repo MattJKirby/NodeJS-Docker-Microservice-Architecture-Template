@@ -1,11 +1,12 @@
 import { IRegistrationConfig } from "../../configuration/ConfigurationTypes";
-import MessageBroker from "../messageBroker/MessageBroker";
-import { MessageConsumer } from "../messageBroker/MessageConsumer";
-import { MessagePublisher } from "../messageBroker/MessagePublisher";
-import { IBrokerMessage } from "../messageBroker/IBrokerMessage";
-import { BrokerMessage } from "../messageBroker/BrokerMessage";
+import Config from '../../configuration/default'
 import { ServiceStatus } from "./ServiceStatus";
 import { IServiceMetaData, ServiceMetaData } from "./ServiceMetaData";
+import { mqPublisher } from "../messageConnector/mqPublisher";
+import { mqConsumer } from "../messageConnector/mqConsumer";
+import mqConnection from "../messageConnector/mqConnection";
+import { mqMessage } from "../messageConnector/mqMessage";
+
 
 export class RegistrationManager {
     /**
@@ -14,52 +15,39 @@ export class RegistrationManager {
     config: IRegistrationConfig
 
     /**
-     * Registration uid assigned by the registry service.
-     */
-    uid?: string;
-
-    /**
      * Used for publishing registration related messages
      */
-    registrationPublisher: MessagePublisher;
+    brokerPublisher: mqPublisher = new mqPublisher(mqConnection, {persistingChannel: true});
 
     /**
      * Used for consuming registration messages
      */
-    registrationConsumer: MessageConsumer;
+    brokerConsumer: mqConsumer =  new mqConsumer(mqConnection, {persistingChannel: true});
 
-    registrationPromise?: Promise<void>
-    
-    resolve!: (value: void | PromiseLike<void>) => void;
+    resolve!: (value: string) => void;
 
     constructor(registrationConfig: IRegistrationConfig){
         this.config = registrationConfig;
-        this.registrationPublisher = new MessagePublisher(MessageBroker);
-        this.registrationConsumer = new MessageConsumer(MessageBroker, this.config.genericResponseQueue);
-
-        this.registrationConsumer.subscribe()
-        this.bindMessageHandlers();
+      
+        this.brokerConsumer.subscribe(this.config.serviceResponseQueue, {usePersistingChannel: true});
+        this.brokerConsumer.registerMessageHandler(this.config.serviceResponseQueue, "assignToken", async (msg: mqMessage) => await this.handleRegistration(msg));
     }
 
-    public registerService = async (meta: IServiceMetaData, status: ServiceStatus): Promise<void> =>{
-        return this.registrationPromise = new Promise((resolve, reject) => {
+    public registerService = async (meta: IServiceMetaData, status: ServiceStatus): Promise<string> =>{
+        return new Promise<string>((resolve, reject) => {
             this.resolve = resolve
-            this.registrationRequest("register",status,meta);
+            this.registrationRequest(status,meta);
         });
     }
 
-    private bindMessageHandlers = (): void => {
-        this.registrationConsumer.registerMessageHandler("assignToken", (msg: IBrokerMessage) => this.handleRegistration(msg))
+    private handleRegistration = async (msg: mqMessage): Promise<void> => {
+        this.brokerConsumer.closeActiveChannel();
+        this.resolve(msg.messageContent.registrationToken);
     }
 
-    private handleRegistration = (msg: IBrokerMessage): void => {
-        this.uid = msg.messageContent.registrationToken;
-        this.registrationConsumer.unsubscribe();
-        this.resolve();
+    public registrationRequest = async(status: ServiceStatus, meta: IServiceMetaData, uid?: string) => {
+        this.brokerPublisher.sendMessage(this.config.messageRequestQueue,new mqMessage("register", {uid: uid, status: status, metaData: meta}),{usePersistingChannel: true});
     }
-
-    public registrationRequest = async(registrationType: string, status: ServiceStatus, meta: IServiceMetaData) => {
-        this.registrationPublisher.sendMessage(this.config.messageRequestQueue,new BrokerMessage(registrationType, {uid: this.uid, status: status, metaData: meta}));
-    }
-
 }
+
+export default new RegistrationManager(Config.serviceRegistration)

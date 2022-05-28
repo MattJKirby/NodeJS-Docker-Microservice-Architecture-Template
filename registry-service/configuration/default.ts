@@ -1,47 +1,60 @@
-import { IEnvironmentConfig } from "./IEnvironmentConfig";
-
-const dev = {
-    app: {
-        port:  3000,
-        version: process.env.npm_package_version || '1.0.0',
-        name: process.env.npm_package_name || 'registry-service',
-        title: 'Registry Service (DEV)'
-    },
-    db: {
-        host: 'mongo',
-        port: 27017,
-        name: 'serviceRegistry'
-    },
-    mqSettings: {
-        protocol: 'amqp',
-        hostname: 'rabbitmq',
-        port: 5672,
-        username: process.env.RABBITMQ_DEFAULT_USER || 'myuser',
-        password: process.env.RABBITMQ_DEFAULT_PASS || 'mypassword',
-    }
-}
-
-const test: IEnvironmentConfig = {
-    app: {
-        port: 3000,
-        version: process.env.npm_package_version || '1.0.0',
-        name: process.env.npm_package_name || 'registry-service',
-        title: 'Registry Service (TEST)'
-    },
-    db: {
-        host: 'mongo',
-        port: 27017,
-        name: 'db'
-    }
-}
+import { IConfig, IEnvironmentConfig } from "./ConfigurationTypes";
 
 /* Configuration options for different environments */
-const config: any = {
-    dev,
-    test
-}
+const Config: IConfig = {
+    dev: {
+        app: {
+            port:  Number(process.env.PORT) || 3000,
+            hostname: 'registry-service',
+            version: process.env.npm_package_version || '1.0.0',
+            name: process.env.npm_package_name || 'registry-service',
+            title: 'Service Registry (DEV)'
+        },
+        db: {
+            host: 'mongo',
+            port: 27017,
+            name: 'serviceRegistry'
+        },
+        mqSettings: {
+            protocol: 'amqp',
+            hostname: 'rabbitmq',
+            port: 5672,
+            username: process.env.RABBITMQ_DEFAULT_USER || 'myuser',
+            password: process.env.RABBITMQ_DEFAULT_PASS || 'mypassword',
+        },
+        serviceRegistration: {
+            serviceRequestQueue: "registry-service.registration",
+            serviceResponseQueue: "registry-service.registration"
+        }
+    },
 
-export default config[process.env.Node_ENV || "dev"]
+    test: {
+        app: {
+            port:  Number(process.env.PORT) || 3000,
+            hostname: 'registry-service',
+            version: process.env.npm_package_version || '1.0.0',
+            name: process.env.npm_package_name || 'registry-service',
+            title: 'Service Registry (TEST)'
+        },
+        db: {
+            host: 'mongo',
+            port: 27017,
+            name: 'serviceRegistry'
+        },
+        mqSettings: {
+            protocol: 'amqp',
+            hostname: 'rabbitmq',
+            port: 5672,
+            username: process.env.RABBITMQ_DEFAULT_USER || 'myuser',
+            password: process.env.RABBITMQ_DEFAULT_PASS || 'mypassword',
+        },
+        serviceRegistration: {
+            serviceRequestQueue: "registry-service.registration",
+            serviceResponseQueue: "registry-service.registration"
+        }
+    }
+}
+export default Config[process.env.NODE_ENV as keyof typeof Config || 'dev']
 
 
 
