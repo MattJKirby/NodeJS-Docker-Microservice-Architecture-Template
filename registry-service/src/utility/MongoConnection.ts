@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { IDbConfig } from '../../configuration/ConfigurationTypes';
 import config from '../../configuration/default'
 import { IDatabaseConnection } from './IDatabaseConnection';
 
@@ -11,7 +12,7 @@ class MongoConnection implements IDatabaseConnection<typeof mongoose>{
     port: number
     connection: Promise<typeof mongoose>
 
-    constructor(config: {host: string, name: string, port: number}){
+    constructor(config: IDbConfig){
         this.hostname = config.host;
         this.databaseName = config.name;
         this.port = config.port;
