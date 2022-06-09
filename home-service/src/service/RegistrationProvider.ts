@@ -8,7 +8,7 @@ import mqConnection from "../messageConnector/mqConnection";
 import { mqMessage } from "../messageConnector/mqMessage";
 
 
-export class RegistrationManager {
+export class RegistrationProvider {
     /**
      * Registration config
      */
@@ -50,4 +50,4 @@ export class RegistrationManager {
     }
 }
 
-export default new RegistrationManager(Config.serviceRegistration)
+export default new RegistrationProvider(Config.serviceRegistration)
