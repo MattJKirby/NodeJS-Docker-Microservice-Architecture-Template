@@ -13,7 +13,18 @@ services:
     volumes:
       - ./mfe-host-service:/usr/src/app/
     ports:
-      - "8000"
+      - "8000:8000"
+
+  mfe-home-service:
+    build:
+      context: './mfe-home-service'
+      dockerfile: Dockerfile
+      target: base
+    volumes:
+      - ./mfe-home-service:/usr/src/app/
+    ports:
+      - "8001:8001"
+    
   
   home-service:
     build: 
