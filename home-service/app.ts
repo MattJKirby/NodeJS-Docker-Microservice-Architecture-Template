@@ -1,13 +1,13 @@
 import express, {Application, Request, Response} from 'express';
 import Config from './configuration/default';
-import RegistrationManager from './src/service/RegistrationManager';
+import RegistrationProvider from './src/service/RegistrationProvider';
 import { Service } from './src/service/Service';
 
 
 const app:Application = express();
 
 //Handles service registration and healthChecks with service registry
-const service = new Service(Config,RegistrationManager);
+const service = new Service(Config,RegistrationProvider);
 
 app.use(express.json());
 

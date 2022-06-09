@@ -2,12 +2,16 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-.container {
+.home__container {
   font-size: 2rem;
   margin: auto;
   max-width: 800px;
   margin-top: 20px;
-  border: 1px solid blue;
+}
+
+.home__basicCounter__container{
+  border: 1px Solid Red;
+  font-size: 1rem;
   margin: 1rem;
   padding: 1rem;
 }

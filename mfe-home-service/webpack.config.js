@@ -5,7 +5,7 @@ const deps = require("./package.json").dependencies;
 module.exports = {
   output: {
     publicPath: "auto",
-    clean: true,
+    clean: true
   },
 
   resolve: {
@@ -13,8 +13,7 @@ module.exports = {
   },
 
   devServer: {
-    host: '0.0.0.0',
-    port: 8000,
+    port: 8001,
     historyApiFallback: true,
   },
 
@@ -47,12 +46,13 @@ module.exports = {
 
   plugins: [
     new ModuleFederationPlugin({
-      name: "host",
+      name: "home",
+      library: { type: "var", name: "home" },
       filename: "remoteEntry.js",
-      remotes: {
-        home: "home@http://localhost:8001/remoteEntry.js"
+      remotes: {},
+      exposes: {
+        './BasicCounter': './src/BasicCounter'
       },
-      exposes: {},
       shared: {
         ...deps,
         react: {
