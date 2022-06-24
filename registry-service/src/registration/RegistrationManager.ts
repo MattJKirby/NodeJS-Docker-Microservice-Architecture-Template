@@ -20,8 +20,8 @@ export class RegistrationManager {
     registrationPublisher: mqPublisher = new mqPublisher(mqConnection, {persistingChannel: true})
 
     constructor(){
-        this.registrationConsumer.subscribe(this.registrationQueue,{usePersistingChannel: true});
         this.initaliseRegister().then(() => {
+            this.registrationConsumer.subscribe(this.registrationQueue,{usePersistingChannel: true});
             this.bindMessageHandlers(); 
         }) 
     }
@@ -75,10 +75,9 @@ export class RegistrationManager {
      * Flush all registration records and any pending registration queue messages.
      */
     private initaliseRegister = async () => {
-        const channelProvider = new mqChannelProvider(mqConnection, {persistingChannel: true})
         await ServiceDbRequests.purgeServices();
-       await (await this.registrationConsumer.activeChannel)?.purgeQueue(this.registrationQueue);
-       
+        await this.registrationConsumer.assertQueue(this.registrationQueue, {durable: false, autoDelete: true})
+        await (await this.registrationConsumer.activeChannel)?.purgeQueue(this.registrationQueue);
     }
 
     public test = async (uid: string) => {
